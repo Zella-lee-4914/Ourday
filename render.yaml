@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: ourday
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: cd client && npm install && npm run build && cd ../server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5
