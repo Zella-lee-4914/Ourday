@@ -5,28 +5,31 @@ import { findBestBookingLink } from "../services/naverPlace.js";
 
 const router = Router();
 const RECOMMEND_COUNT = 10;
-// 네이버 검색 결과가 아예 없는 활동은 걸러내야 하므로, 여유분을 더 생성해서 채운다.
-const GENERATE_BUFFER = 6;
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
- * 각 활동에 대해 네이버 지역 검색으로 실제 업체를 찾아 bookingLink를 교체한다.
- * - 검색 결과가 아예 없는(no_results) 활동은 예약할 곳이 없다는 뜻이므로 목록에서 제외한다.
- * - 키 미설정/오류(unavailable)일 때는 확인 자체가 안 된 것이므로 기존 링크를 그대로 유지한다.
+ * 각 활동에 대해 네이버 지역 검색으로 실제 업체 링크를 확인한다.
+ * 추천 개수는 항상 그대로 유지하고, 대신 각 활동에 bookingLinkVerified 플래그를 붙인다.
+ * - true: 업체의 확인된 자체 링크를 찾아 bookingLink를 교체함 -> 클라이언트에서 예약 CTA 활성화
+ * - false: 검색 결과 없음/자체 링크 없음/오류 -> 클라이언트에서 예약 CTA 숨김 처리
+ * (네이버 키 자체가 없으면 검증을 시도하지 않고 모두 verified 취급해 기존 동작을 유지한다)
  */
 async function enrichBookingLinks(activities) {
-  const results = await Promise.all(
+  return Promise.all(
     activities.map(async (activity) => {
       const found = await findBestBookingLink(`${activity.location} ${activity.title}`);
-      if (found.status === "found") return { ...activity, bookingLink: found.link };
-      if (found.status === "no_results") return null;
-      return activity; // unavailable: best-effort로 원래 링크 유지
+      if (found.status === "found") {
+        return { ...activity, bookingLink: found.link, bookingLinkVerified: true };
+      }
+      if (found.status === "not_configured") {
+        return { ...activity, bookingLinkVerified: true };
+      }
+      return { ...activity, bookingLinkVerified: false };
     })
   );
-  return results.filter(Boolean);
 }
 
 router.post("/recommend", async (req, res) => {
@@ -43,12 +46,12 @@ router.post("/recommend", async (req, res) => {
     keywords,
     placeType: placeType || "모두",
     weather,
-    count: RECOMMEND_COUNT + GENERATE_BUFFER,
+    count: RECOMMEND_COUNT,
   };
 
   try {
     const activities = await recommendWithClaude(params);
-    const enriched = (await enrichBookingLinks(activities)).slice(0, RECOMMEND_COUNT);
+    const enriched = await enrichBookingLinks(activities);
     return res.json({ ok: true, source: "claude", activities: enriched });
   } catch (err) {
     console.warn("Claude 추천 실패, 규칙 기반 폴백으로 전환:", err.message);
@@ -58,7 +61,7 @@ router.post("/recommend", async (req, res) => {
     // 폴백 경로도 "AI 추천 중" 로딩 UX를 유지하기 위한 인위적 지연
     await wait(600 + Math.random() * 900);
     const activities = recommendActivities(params);
-    const enriched = (await enrichBookingLinks(activities)).slice(0, RECOMMEND_COUNT);
+    const enriched = await enrichBookingLinks(activities);
     res.json({ ok: true, source: "fallback", activities: enriched });
   } catch (err) {
     console.error("recommend fallback error", err);

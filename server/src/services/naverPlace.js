@@ -6,18 +6,22 @@ function stripTags(html) {
 }
 
 /**
- * 네이버 지역 검색 API로 특정 활동에 맞는 실제 업체를 찾아 예약 링크를 만든다.
+ * 네이버 지역 검색 API로 특정 활동에 맞는 실제 업체를 찾는다.
  * 공식 API는 평점을 제공하지 않아 sort=comment(리뷰 많은 순)를 "인기/평점"의 대체 지표로 사용한다.
  *
+ * "확인된 링크"만 신뢰한다: 업체가 등록한 자체 링크(top.link)가 있을 때만 유효한 것으로 본다.
+ * 링크가 없어 "업체명+주소"로 지도 검색 URL을 재구성하는 방식은 실제로는 검색 결과가 없는
+ * 경우가 많아(API 인덱스와 지도 웹 검색 인덱스가 다름) 신뢰할 수 없으므로 더 이상 사용하지 않는다.
+ *
  * 반환 형태 (status로 구분):
- * - { status: "found", link, title }   : 실제 업체를 찾음, 링크 교체
- * - { status: "no_results" }           : API 호출은 성공했지만 검색 결과가 0건 (호출부에서 이 활동은 제외 처리)
- * - { status: "unavailable" }          : 키 미설정/네트워크 오류/타임아웃 등 확인 불가 (호출부에서 기존 링크 유지)
+ * - { status: "found", link, title } : 업체 자체 링크를 확인함, 그대로 사용
+ * - { status: "not_configured" }     : NAVER_CLIENT_ID/SECRET 미설정 (기능 자체가 꺼져 있음)
+ * - { status: "unconfirmed" }        : 결과 없음 / 자체 링크 없음 / 오류·타임아웃 등, 확실한 링크를 보장 못함
  */
 export async function findBestBookingLink(query) {
   const clientId = process.env.NAVER_CLIENT_ID;
   const clientSecret = process.env.NAVER_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return { status: "unavailable" };
+  if (!clientId || !clientSecret) return { status: "not_configured" };
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -32,29 +36,19 @@ export async function findBestBookingLink(query) {
       signal: controller.signal,
     });
 
-    if (!res.ok) return { status: "unavailable" };
+    if (!res.ok) return { status: "unconfirmed" };
 
     const data = await res.json();
     const top = data?.items?.[0];
-    if (!top) return { status: "no_results" };
+    if (!top) return { status: "unconfirmed" };
 
-    const title = stripTags(top.title || "");
-    const address = top.roadAddress || top.address || "";
-
-    // 업체 자체 홈페이지/플레이스 링크가 있으면 그대로 사용
     if (top.link && /^https?:\/\//.test(top.link)) {
-      return { status: "found", link: top.link, title };
+      return { status: "found", link: top.link, title: stripTags(top.title || "") };
     }
 
-    // 없으면 "업체명 + 주소"로 검색해 사실상 해당 업체 하나로 특정되는 네이버 지도 링크 생성
-    const mapQuery = `${title} ${address}`.trim();
-    return {
-      status: "found",
-      link: `https://map.naver.com/p/search/${encodeURIComponent(mapQuery)}`,
-      title,
-    };
+    return { status: "unconfirmed" };
   } catch {
-    return { status: "unavailable" };
+    return { status: "unconfirmed" };
   } finally {
     clearTimeout(timeout);
   }

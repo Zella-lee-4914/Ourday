@@ -214,7 +214,9 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--white);
-  padding: 16px;
+  padding: 14px 18px;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .date-row {
@@ -243,20 +245,6 @@ textarea {
   margin-left: 6px;
   opacity: 0.6;
   cursor: pointer;
-}
-
-.date-summary {
-  flex: 1;
-  text-align: right;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-
-.date-chevron {
-  color: var(--text-muted);
-  font-size: 18px;
-  flex-shrink: 0;
 }
 
 .weather-inline-row {

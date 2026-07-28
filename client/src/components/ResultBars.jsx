@@ -28,7 +28,7 @@ export default function ResultBars({ activities, cands, voters, totalVoters }) {
                 style={{ width: `${(votes / maxVotes) * 100}%` }}
               />
             </div>
-            {isWinner && (
+            {isWinner && activity.bookingLinkVerified !== false && (
               <a
                 href={activity.bookingLink}
                 target="_blank"

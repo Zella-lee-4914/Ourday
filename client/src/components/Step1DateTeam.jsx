@@ -5,7 +5,6 @@ const MAX_TEAM = 50;
 const MIN_BUDGET = 10000;
 const MAX_BUDGET = 100000;
 const BUDGET_STEP = 5000;
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 function todayStr() {
   const d = new Date();
@@ -13,11 +12,6 @@ function todayStr() {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
-}
-
-function formatDateKorean(dateStr) {
-  const d = new Date(`${dateStr}T00:00:00`);
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
 }
 
 export default function Step1DateTeam({ state, setState, districts, weatherLoading, weather }) {
@@ -101,10 +95,6 @@ export default function Step1DateTeam({ state, setState, districts, weatherLoadi
               value={state.date}
               onChange={handleDateChange}
             />
-            <span className="date-summary">
-              {state.date ? formatDateKorean(state.date) : "날짜를 선택해주세요"}
-            </span>
-            <span className="date-chevron">›</span>
           </div>
 
           <div className="weather-inline-row">
