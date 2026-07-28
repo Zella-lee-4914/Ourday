@@ -8,12 +8,16 @@ function stripTags(html) {
 /**
  * 네이버 지역 검색 API로 특정 활동에 맞는 실제 업체를 찾아 예약 링크를 만든다.
  * 공식 API는 평점을 제공하지 않아 sort=comment(리뷰 많은 순)를 "인기/평점"의 대체 지표로 사용한다.
- * NAVER_CLIENT_ID/SECRET이 없거나 호출 실패/결과 없음이면 null을 반환해 기존 링크를 그대로 쓰게 한다.
+ *
+ * 반환 형태 (status로 구분):
+ * - { status: "found", link, title }   : 실제 업체를 찾음, 링크 교체
+ * - { status: "no_results" }           : API 호출은 성공했지만 검색 결과가 0건 (호출부에서 이 활동은 제외 처리)
+ * - { status: "unavailable" }          : 키 미설정/네트워크 오류/타임아웃 등 확인 불가 (호출부에서 기존 링크 유지)
  */
 export async function findBestBookingLink(query) {
   const clientId = process.env.NAVER_CLIENT_ID;
   const clientSecret = process.env.NAVER_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return null;
+  if (!clientId || !clientSecret) return { status: "unavailable" };
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -28,28 +32,29 @@ export async function findBestBookingLink(query) {
       signal: controller.signal,
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) return { status: "unavailable" };
 
     const data = await res.json();
     const top = data?.items?.[0];
-    if (!top) return null;
+    if (!top) return { status: "no_results" };
 
     const title = stripTags(top.title || "");
     const address = top.roadAddress || top.address || "";
 
     // 업체 자체 홈페이지/플레이스 링크가 있으면 그대로 사용
     if (top.link && /^https?:\/\//.test(top.link)) {
-      return { link: top.link, title };
+      return { status: "found", link: top.link, title };
     }
 
     // 없으면 "업체명 + 주소"로 검색해 사실상 해당 업체 하나로 특정되는 네이버 지도 링크 생성
     const mapQuery = `${title} ${address}`.trim();
     return {
+      status: "found",
       link: `https://map.naver.com/p/search/${encodeURIComponent(mapQuery)}`,
       title,
     };
   } catch {
-    return null;
+    return { status: "unavailable" };
   } finally {
     clearTimeout(timeout);
   }

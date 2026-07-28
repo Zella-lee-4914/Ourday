@@ -198,6 +198,10 @@ textarea {
   align-items: center;
   justify-content: center;
   font-size: 18px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .weather-badge {
@@ -226,8 +230,9 @@ textarea {
   font-weight: 500;
   color: var(--text-strong);
   padding: 6px 0;
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
+  cursor: pointer;
 }
 
 .date-input-inline:focus {
@@ -237,6 +242,21 @@ textarea {
 .date-input-inline::-webkit-calendar-picker-indicator {
   margin-left: 6px;
   opacity: 0.6;
+  cursor: pointer;
+}
+
+.date-summary {
+  flex: 1;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.date-chevron {
+  color: var(--text-muted);
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
 .weather-inline-row {

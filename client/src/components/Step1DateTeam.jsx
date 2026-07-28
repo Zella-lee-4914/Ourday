@@ -1,8 +1,11 @@
+import { useRef } from "react";
+
 const MIN_TEAM = 2;
 const MAX_TEAM = 50;
 const MIN_BUDGET = 10000;
 const MAX_BUDGET = 100000;
 const BUDGET_STEP = 5000;
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 function todayStr() {
   const d = new Date();
@@ -12,9 +15,30 @@ function todayStr() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function formatDateKorean(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
+}
+
 export default function Step1DateTeam({ state, setState, districts, weatherLoading, weather }) {
+  const dateInputRef = useRef(null);
+
   const handleDateChange = (e) => {
     setState((s) => ({ ...s, date: e.target.value }));
+  };
+
+  const handleOpenPicker = () => {
+    const el = dateInputRef.current;
+    if (!el) return;
+    if (typeof el.showPicker === "function") {
+      try {
+        el.showPicker();
+        return;
+      } catch {
+        // showPicker가 막힌 브라우저는 focus로 대체
+      }
+    }
+    el.focus();
   };
 
   const adjustTeam = (delta) => {
@@ -66,14 +90,21 @@ export default function Step1DateTeam({ state, setState, districts, weatherLoadi
         </div>
         <div className="date-weather-card">
           <div className="date-row">
-            <span className="icon-badge">📅</span>
+            <button type="button" className="icon-badge" onClick={handleOpenPicker} aria-label="날짜 선택">
+              📅
+            </button>
             <input
+              ref={dateInputRef}
               type="date"
               className="date-input-inline"
               min={todayStr()}
               value={state.date}
               onChange={handleDateChange}
             />
+            <span className="date-summary">
+              {state.date ? formatDateKorean(state.date) : "날짜를 선택해주세요"}
+            </span>
+            <span className="date-chevron">›</span>
           </div>
 
           <div className="weather-inline-row">
