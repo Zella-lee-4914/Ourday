@@ -42,6 +42,14 @@ function matchesDistrict(item, expectedDistrict) {
   return address.includes(expectedDistrict);
 }
 
+// 네이버 지역 검색 API의 mapx/mapy는 WGS84 위경도에 10^7을 곱한 정수 문자열이다.
+function toLatLng(item) {
+  const lng = Number(item.mapx) / 1e7;
+  const lat = Number(item.mapy) / 1e7;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat === 0 || lng === 0) return null;
+  return { lat, lng };
+}
+
 /**
  * 네이버 지역 검색 API로 특정 활동에 맞는 실제 업체를 찾는다.
  * 공식 API는 평점을 제공하지 않아 sort=comment(리뷰 많은 순)를 "인기/평점"의 대체 지표로 사용한다.
@@ -49,11 +57,13 @@ function matchesDistrict(item, expectedDistrict) {
  * "이름은 비슷하지만 다른 구/다른 도시의 엉뚱한 장소"로 잘못 매칭되는 것을 막는다.
  *
  * 반환 형태 (status로 구분):
- * - { status: "found", link, title }    : 업체가 등록한 자체 링크(SNS 제외)를 확인함, 그대로 사용
- * - { status: "place", title, address } : 자체 링크는 없거나 SNS라 못 쓰지만, 검색 API가 실제
- *                                          업체를 찾음 -> 업체명+주소로 지도 검색하면 결과가 보장됨
- * - { status: "not_configured" }        : NAVER_CLIENT_ID/SECRET 미설정 (기능 자체가 꺼져 있음)
- * - { status: "unconfirmed" }           : 결과 없음 / district 불일치 / 오류·타임아웃 등, 확실한 링크를 보장 못함
+ * - { status: "found", link, title }           : 업체가 등록한 자체 링크(SNS 제외)를 확인함, 그대로 사용
+ * - { status: "place", title, address, coord } : 자체 링크는 없거나 SNS라 못 쓰지만, 검색 API가 실제
+ *                                                 업체를 찾음. 업체명+주소로 만든 네이버 지도 텍스트 검색은
+ *                                                 API 인덱스와 지도 웹 검색 인덱스가 달라 결과 없음이 잦으므로
+ *                                                 좌표(coord)가 있으면 호출측에서 좌표 기반 링크를 우선 써야 한다.
+ * - { status: "not_configured" }               : NAVER_CLIENT_ID/SECRET 미설정 (기능 자체가 꺼져 있음)
+ * - { status: "unconfirmed" }                  : 결과 없음 / district 불일치 / 오류·타임아웃 등, 확실한 링크를 보장 못함
  */
 export async function findBestBookingLink(query, expectedDistrict) {
   const clientId = process.env.NAVER_CLIENT_ID;
@@ -88,7 +98,7 @@ export async function findBestBookingLink(query, expectedDistrict) {
 
     const address = stripTags(top.roadAddress || top.address || "");
     if (title && address) {
-      return { status: "place", title, address };
+      return { status: "place", title, address, coord: toLatLng(top) };
     }
 
     return { status: "unconfirmed" };

@@ -14,11 +14,14 @@ function wait(ms) {
  * 각 활동에 대해 네이버 지역 검색으로 실제 업체 링크를 확인한다.
  * 추천 개수는 항상 그대로 유지하고, 각 활동에 bookingLinkVerified 플래그를 붙인다.
  * - true: 업체가 등록한 자체 링크(SNS 제외)를 찾아 bookingLink를 교체함 -> "예약하러 가기"로 표시
- * - false: 특정 업체 홈페이지는 확인 못 했지만, 검색 API가 실제로 찾아낸 업체명+주소로 네이버
- *   지도를 검색하도록 bookingLink를 재구성한다("place"). 이 경우 실제 업체가 존재하므로 지도
- *   검색 결과가 보장된다. 검색 API가 아예 업체를 못 찾았을 때만 "장소명 + 활동명" 문구로
- *   추측 검색을 시도한다("unconfirmed", 결과가 없을 수도 있음). 클라이언트에서는 두 경우 모두
- *   "지도에서 위치 보기"로 표시.
+ * - false: 특정 업체 홈페이지는 확인 못 했지만, 검색 API가 실제 업체를 찾음("place"). 이때
+ *   "업체명+주소"로 네이버 지도 텍스트 검색 URL을 만드는 방식은 API 인덱스와 지도 웹 검색
+ *   인덱스가 달라 실제로는 결과 없음이 잦다는 게 확인됐다(사용자 리포트로 재확인). 그래서
+ *   좌표(coord)가 있으면 텍스트 검색이 아니라 좌표를 그대로 찍는 구글 지도 링크
+ *   (`/maps/search/?api=1&query=lat,lng`)를 쓴다 - 텍스트 매칭에 의존하지 않으므로 결과 없음이
+ *   구조적으로 불가능하다. 좌표조차 없을 때만 "장소명 + 활동명" 문구로 네이버 지도 텍스트
+ *   검색을 추측 시도한다("unconfirmed", 결과가 없을 수도 있는 최후 수단).
+ *   클라이언트에서는 세 경우 모두 "지도에서 위치 보기"로 표시.
  * (네이버 키 자체가 없으면 검증을 시도하지 않고 모두 verified 취급해 기존 링크를 유지한다)
  */
 async function enrichBookingLinks(activities) {
@@ -32,11 +35,10 @@ async function enrichBookingLinks(activities) {
         return { ...activity, bookingLinkVerified: true };
       }
       if (found.status === "place") {
-        return {
-          ...activity,
-          bookingLink: `https://map.naver.com/p/search/${encodeURIComponent(`${found.title} ${found.address}`)}`,
-          bookingLinkVerified: false,
-        };
+        const bookingLink = found.coord
+          ? `https://www.google.com/maps/search/?api=1&query=${found.coord.lat},${found.coord.lng}`
+          : `https://map.naver.com/p/search/${encodeURIComponent(`${found.title} ${found.address}`)}`;
+        return { ...activity, bookingLink, bookingLinkVerified: false };
       }
       return {
         ...activity,

@@ -32,7 +32,7 @@ async function main() {
       found.status === "found"
         ? `FOUND -> ${found.title} (${found.link})`
         : found.status === "place"
-        ? `PLACE -> ${found.title}, ${found.address}`
+        ? `PLACE -> ${found.title}, ${found.address} ${found.coord ? `[좌표 O -> 구글 지도 핀 링크]` : `[좌표 X -> 네이버 텍스트 검색, 결과 없음 위험]`}`
         : "MISS  -> 검색 결과 없음";
     console.log(`[${activity.district}] ${query.padEnd(28)} ${label}`);
 
@@ -40,6 +40,7 @@ async function main() {
   }
 
   const missed = results.filter((r) => r.found.status === "unconfirmed");
+  const placeNoCoord = results.filter((r) => r.found.status === "place" && !r.found.coord);
   console.log("---");
   console.log(
     `총 ${results.length}개 중 FOUND ${results.filter((r) => r.found.status === "found").length}개, ` +
@@ -50,6 +51,10 @@ async function main() {
     console.log("\nMISS(검색 결과 없음, 지도 CTA가 빈 결과로 이어질 수 있음):");
     missed.forEach((r) => console.log(`  - [${r.activity.district}] ${r.activity.title} @ ${r.activity.location}`));
     console.log("\n주의: rate limit으로 인한 일시적 오탐일 수 있으니, 시간을 두고 한 번 더 확인해보세요.");
+  }
+  if (placeNoCoord.length > 0) {
+    console.log("\nPLACE인데 좌표가 없어 여전히 네이버 텍스트 검색에 의존하는 항목:");
+    placeNoCoord.forEach((r) => console.log(`  - [${r.activity.district}] ${r.activity.title} @ ${r.activity.location}`));
   }
 }
 
