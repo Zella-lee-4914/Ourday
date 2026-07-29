@@ -2,7 +2,7 @@ const NAVER_LOCAL_SEARCH_URL = "https://openapi.naver.com/v1/search/local.json";
 const REQUEST_TIMEOUT_MS = 4000;
 
 // 업체가 top.link에 SNS/커뮤니티 주소를 등록해두는 경우가 많다. 예약/상세 정보 확인이
-// 목적인 CTA가 인스타그램 프로필 등으로 랜딩되지 않도록 이런 도메인은 "확인된 링크"로 보지 않는다.
+// 목적인 CTA가 인스타그램 프로필 등으로 랜딩되지 않도록 이런 도메인은 "확인된 홈페이지"로 보지 않는다.
 const SNS_LINK_HOSTS = [
   "instagram.com",
   "facebook.com",
@@ -21,10 +21,6 @@ const SNS_LINK_HOSTS = [
   "pf.kakao.com",
 ];
 
-function stripTags(html) {
-  return html.replace(/<[^>]*>/g, "");
-}
-
 function isSnsLink(link) {
   try {
     const host = new URL(link).hostname.replace(/^www\./, "");
@@ -42,28 +38,17 @@ function matchesDistrict(item, expectedDistrict) {
   return address.includes(expectedDistrict);
 }
 
-// 네이버 지역 검색 API의 mapx/mapy는 WGS84 위경도에 10^7을 곱한 정수 문자열이다.
-function toLatLng(item) {
-  const lng = Number(item.mapx) / 1e7;
-  const lat = Number(item.mapy) / 1e7;
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat === 0 || lng === 0) return null;
-  return { lat, lng };
-}
-
 /**
  * 네이버 지역 검색 API로 특정 활동에 맞는 실제 업체를 찾는다.
- * 공식 API는 평점을 제공하지 않아 sort=comment(리뷰 많은 순)를 "인기/평점"의 대체 지표로 사용한다.
- * expectedDistrict가 주어지면, 상위 5개 결과 중 주소가 그 구와 일치하는 첫 결과만 채택해
- * "이름은 비슷하지만 다른 구/다른 도시의 엉뚱한 장소"로 잘못 매칭되는 것을 막는다.
+ * 공식 API는 리뷰 "개수"를 제공하지 않아 sort=comment(리뷰 많은 순) 결과에서의 순위(rankIndex)를
+ * 리뷰량의 근사치로 쓴다. expectedDistrict가 주어지면, 상위 5개 결과 중 주소가 그 구와 일치하는
+ * 첫 결과만 채택해 "이름은 비슷하지만 다른 구/다른 도시의 엉뚱한 장소"로 잘못 매칭되는 것을 막는다.
  *
  * 반환 형태 (status로 구분):
- * - { status: "found", link, title }           : 업체가 등록한 자체 링크(SNS 제외)를 확인함, 그대로 사용
- * - { status: "place", title, address, coord } : 자체 링크는 없거나 SNS라 못 쓰지만, 검색 API가 실제
- *                                                 업체를 찾음. 업체명+주소로 만든 네이버 지도 텍스트 검색은
- *                                                 API 인덱스와 지도 웹 검색 인덱스가 달라 결과 없음이 잦으므로
- *                                                 좌표(coord)가 있으면 호출측에서 좌표 기반 링크를 우선 써야 한다.
- * - { status: "not_configured" }               : NAVER_CLIENT_ID/SECRET 미설정 (기능 자체가 꺼져 있음)
- * - { status: "unconfirmed" }                  : 결과 없음 / district 불일치 / 오류·타임아웃 등, 확실한 링크를 보장 못함
+ * - { status: "found", link, rankIndex }  : 업체가 등록한 자체 링크(SNS 제외)를 확인함
+ * - { status: "no_link", rankIndex }      : 검색 API가 실제 업체를 찾았으나 자체 링크가 없거나 SNS뿐임
+ * - { status: "not_configured" }          : NAVER_CLIENT_ID/SECRET 미설정 (기능 자체가 꺼져 있음)
+ * - { status: "unconfirmed" }             : 결과 없음 / district 불일치 / 오류·타임아웃 등, rankIndex도 없음
  */
 export async function findBestBookingLink(query, expectedDistrict) {
   const clientId = process.env.NAVER_CLIENT_ID;
@@ -87,23 +72,35 @@ export async function findBestBookingLink(query, expectedDistrict) {
 
     const data = await res.json();
     const items = data?.items || [];
-    const top = items.find((item) => matchesDistrict(item, expectedDistrict));
+    const rankIndex = items.findIndex((item) => matchesDistrict(item, expectedDistrict));
+    const top = rankIndex === -1 ? null : items[rankIndex];
     if (!top) return { status: "unconfirmed" };
 
-    const title = stripTags(top.title || "");
-
     if (top.link && /^https?:\/\//.test(top.link) && !isSnsLink(top.link)) {
-      return { status: "found", link: top.link, title };
+      return { status: "found", link: top.link, rankIndex };
     }
 
-    const address = stripTags(top.roadAddress || top.address || "");
-    if (title && address) {
-      return { status: "place", title, address, coord: toLatLng(top) };
-    }
-
-    return { status: "unconfirmed" };
+    return { status: "no_link", rankIndex };
   } catch {
     return { status: "unconfirmed" };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
+ * "홈페이지가 있다"고 확인된 링크도 실제로는 폐업/만료 등으로 접속이 안 될 수 있다.
+ * 그런 경우 CTA를 "예약하러 가기"로 보여주고도 오류 페이지로 보내는 걸 막기 위해
+ * 최종 후보로 뽑힌 링크만(전수 검사 대신) 실제 접속 가능 여부를 확인한다.
+ */
+export async function isLinkAlive(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3500);
+  try {
+    const res = await fetch(url, { method: "GET", redirect: "follow", signal: controller.signal });
+    return res.ok;
+  } catch {
+    return false;
   } finally {
     clearTimeout(timeout);
   }

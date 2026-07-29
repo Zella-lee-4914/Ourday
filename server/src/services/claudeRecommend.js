@@ -13,7 +13,7 @@ function buildPrompt({ teamSize, budget, districts, keywords, placeType, weather
 
 [조건]
 - 팀 인원: ${teamSize || "미지정"}명
-- 1인당 예산: ${budget ? `${budget.toLocaleString()}원 (이 금액을 넘지 않으면서 최대한 이 금액에 가까운 활동 위주로 추천)` : "제한 없음"}
+- 1인당 예산: ${budget ? `${budget.toLocaleString()}원 (초과해도 되니 이 금액에 최대한 가까운 활동 위주로 추천)` : "제한 없음"}
 - 선호 지역(서울 구): ${districtText}
 - 활동 성향 키워드: ${keywords.join(", ")}
 - 활동 장소 유형: ${placeTypeText} (반드시 이 조건을 지킬 것. "모두"가 아니면 지정된 타입만 추천)

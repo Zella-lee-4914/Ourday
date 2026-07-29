@@ -31,7 +31,7 @@ export default function DetailModal({ activity, isCandidate, onClose, onToggleCa
     if (e.target === e.currentTarget) onClose();
   };
 
-  const bookingLabel = activity.bookingLinkVerified === false ? "지도에서 위치 보기" : "예약하러 가기";
+  const bookingLabel = activity.bookingLinkVerified === false ? "지도에서 찾기" : "예약하러 가기";
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>

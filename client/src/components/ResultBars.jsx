@@ -36,7 +36,7 @@ export default function ResultBars({ activities, cands, voters, totalVoters }) {
                 className="mini-cta"
                 style={{ textDecoration: "none", marginTop: 8 }}
               >
-                {activity.bookingLinkVerified === false ? "지도에서 위치 보기" : "예약하러 가기"}
+                {activity.bookingLinkVerified === false ? "지도에서 찾기" : "예약하러 가기"}
               </a>
             )}
           </div>

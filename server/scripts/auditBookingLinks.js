@@ -1,6 +1,6 @@
-// 데이터셋(activities.js)의 각 활동이 실제로 예약/지도 CTA를 눌렀을 때 진짜 검색 결과를
-// 내는지 사전 검증하는 스크립트. recommend.js가 런타임에 쓰는 것과 동일한 검색어
-// ({location} {title})와 동일한 로직(findBestBookingLink)을 그대로 재사용한다.
+// 데이터셋(activities.js)의 각 활동에 대해 실제로 CTA를 눌렀을 때 무슨 일이 벌어지는지
+// 사전 점검하는 스크립트. recommend.js 런타임과 동일한 로직(findBestBookingLink, isLinkAlive)을
+// 그대로 재사용한다.
 //
 // 사용법: node scripts/auditBookingLinks.js   (server/.env의 NAVER_CLIENT_ID/SECRET 필요)
 //
@@ -8,7 +8,7 @@
 // 순간적으로 결과 없음(rate limit)으로 잘못 나올 수 있다. 그래서 요청 사이에 딜레이를 둔다.
 import "../src/loadEnv.js";
 import { ACTIVITIES } from "../src/data/activities.js";
-import { findBestBookingLink } from "../src/services/naverPlace.js";
+import { findBestBookingLink, isLinkAlive } from "../src/services/naverPlace.js";
 
 const REQUEST_DELAY_MS = 600;
 
@@ -26,35 +26,38 @@ async function main() {
   for (const activity of ACTIVITIES) {
     const query = `${activity.location} ${activity.title}`;
     const found = await findBestBookingLink(query, activity.district);
-    results.push({ activity, query, found });
 
-    const label =
-      found.status === "found"
-        ? `FOUND -> ${found.title} (${found.link})`
-        : found.status === "place"
-        ? `PLACE -> ${found.title}, ${found.address} ${found.coord ? `[좌표 O -> 네이버 지도 좌표 링크]` : `[좌표 X -> 네이버 텍스트 검색, 결과 없음 위험]`}`
-        : "MISS  -> 검색 결과 없음";
+    let label;
+    if (found.status === "found") {
+      const alive = await isLinkAlive(found.link);
+      label = alive
+        ? `예약하러 가기 -> ${found.link} (rank ${found.rankIndex})`
+        : `홈페이지 있음이나 접속 불가(dead link) -> ${found.link}, 지도에서 찾기로 폴백됨`;
+    } else if (found.status === "no_link") {
+      label = `지도에서 찾기 (업체는 찾았지만 자체 링크 없음/SNS뿐, rank ${found.rankIndex})`;
+    } else {
+      label = "지도에서 찾기 (검색 API가 매칭 실패, 리뷰 순위 근사치 없음 - 최하위 취급됨)";
+    }
+    results.push({ activity, found, label });
     console.log(`[${activity.district}] ${query.padEnd(28)} ${label}`);
 
     await wait(REQUEST_DELAY_MS);
   }
 
-  const missed = results.filter((r) => r.found.status === "unconfirmed");
-  const placeNoCoord = results.filter((r) => r.found.status === "place" && !r.found.coord);
+  const dead = results.filter(
+    (r) => r.found.status === "found" && r.label.includes("접속 불가")
+  );
+  const unconfirmed = results.filter((r) => r.found.status === "unconfirmed");
   console.log("---");
   console.log(
-    `총 ${results.length}개 중 FOUND ${results.filter((r) => r.found.status === "found").length}개, ` +
-      `PLACE ${results.filter((r) => r.found.status === "place").length}개, ` +
-      `MISS ${missed.length}개`
+    `총 ${results.length}개 중 예약하러가기 ${results.filter((r) => r.found.status === "found" && !r.label.includes("접속 불가")).length}개, ` +
+      `지도에서찾기(업체 확인됨) ${results.filter((r) => r.found.status === "no_link").length}개, ` +
+      `지도에서찾기(매칭 실패) ${unconfirmed.length}개, ` +
+      `죽은 링크 ${dead.length}개`
   );
-  if (missed.length > 0) {
-    console.log("\nMISS(검색 결과 없음, 지도 CTA가 빈 결과로 이어질 수 있음):");
-    missed.forEach((r) => console.log(`  - [${r.activity.district}] ${r.activity.title} @ ${r.activity.location}`));
-    console.log("\n주의: rate limit으로 인한 일시적 오탐일 수 있으니, 시간을 두고 한 번 더 확인해보세요.");
-  }
-  if (placeNoCoord.length > 0) {
-    console.log("\nPLACE인데 좌표가 없어 여전히 네이버 텍스트 검색에 의존하는 항목:");
-    placeNoCoord.forEach((r) => console.log(`  - [${r.activity.district}] ${r.activity.title} @ ${r.activity.location}`));
+  if (dead.length > 0) {
+    console.log("\n홈페이지는 있지만 접속이 안 되는 항목(자동으로 지도에서 찾기로 폴백됨):");
+    dead.forEach((r) => console.log(`  - [${r.activity.district}] ${r.activity.title} @ ${r.activity.location} -> ${r.found.link}`));
   }
 }
 
