@@ -28,7 +28,7 @@ export default function ResultBars({ activities, cands, voters, totalVoters }) {
                 style={{ width: `${(votes / maxVotes) * 100}%` }}
               />
             </div>
-            {isWinner && activity.bookingLinkVerified !== false && (
+            {isWinner && (
               <a
                 href={activity.bookingLink}
                 target="_blank"
@@ -36,7 +36,7 @@ export default function ResultBars({ activities, cands, voters, totalVoters }) {
                 className="mini-cta"
                 style={{ textDecoration: "none", marginTop: 8 }}
               >
-                예약하러 가기
+                {activity.bookingLinkVerified === false ? "지도에서 위치 보기" : "예약하러 가기"}
               </a>
             )}
           </div>

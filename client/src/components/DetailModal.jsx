@@ -31,7 +31,7 @@ export default function DetailModal({ activity, isCandidate, onClose, onToggleCa
     if (e.target === e.currentTarget) onClose();
   };
 
-  const showBookingCta = activity.bookingLinkVerified !== false;
+  const bookingLabel = activity.bookingLinkVerified === false ? "지도에서 위치 보기" : "예약하러 가기";
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
@@ -109,26 +109,7 @@ export default function DetailModal({ activity, isCandidate, onClose, onToggleCa
           </>
         )}
 
-        {showBookingCta ? (
-          <div className="cta-row">
-            <button
-              type="button"
-              className="cta-btn secondary"
-              onClick={() => onToggleCandidate(activity)}
-            >
-              {isCandidate ? "후보에서 제거" : "투표 후보로 추가"}
-            </button>
-            <a
-              href={activity.bookingLink}
-              target="_blank"
-              rel="noreferrer"
-              className="cta-btn"
-              style={{ textDecoration: "none", textAlign: "center" }}
-            >
-              예약하러 가기
-            </a>
-          </div>
-        ) : (
+        <div className="cta-row">
           <button
             type="button"
             className="cta-btn secondary"
@@ -136,7 +117,16 @@ export default function DetailModal({ activity, isCandidate, onClose, onToggleCa
           >
             {isCandidate ? "후보에서 제거" : "투표 후보로 추가"}
           </button>
-        )}
+          <a
+            href={activity.bookingLink}
+            target="_blank"
+            rel="noreferrer"
+            className="cta-btn"
+            style={{ textDecoration: "none", textAlign: "center" }}
+          >
+            {bookingLabel}
+          </a>
+        </div>
       </div>
     </div>
   );

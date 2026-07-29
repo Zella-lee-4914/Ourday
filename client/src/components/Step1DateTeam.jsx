@@ -97,6 +97,8 @@ export default function Step1DateTeam({ state, setState, districts, weatherLoadi
             />
           </div>
 
+          <div className="weather-divider" />
+
           <div className="weather-inline-row">
             {weatherLoading && (
               <>
