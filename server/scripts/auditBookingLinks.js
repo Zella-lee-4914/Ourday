@@ -32,7 +32,7 @@ async function main() {
       found.status === "found"
         ? `FOUND -> ${found.title} (${found.link})`
         : found.status === "place"
-        ? `PLACE -> ${found.title}, ${found.address} ${found.coord ? `[좌표 O -> 구글 지도 핀 링크]` : `[좌표 X -> 네이버 텍스트 검색, 결과 없음 위험]`}`
+        ? `PLACE -> ${found.title}, ${found.address} ${found.coord ? `[좌표 O -> 네이버 지도 좌표 링크]` : `[좌표 X -> 네이버 텍스트 검색, 결과 없음 위험]`}`
         : "MISS  -> 검색 결과 없음";
     console.log(`[${activity.district}] ${query.padEnd(28)} ${label}`);
 

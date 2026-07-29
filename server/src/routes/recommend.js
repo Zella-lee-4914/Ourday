@@ -17,10 +17,11 @@ function wait(ms) {
  * - false: 특정 업체 홈페이지는 확인 못 했지만, 검색 API가 실제 업체를 찾음("place"). 이때
  *   "업체명+주소"로 네이버 지도 텍스트 검색 URL을 만드는 방식은 API 인덱스와 지도 웹 검색
  *   인덱스가 달라 실제로는 결과 없음이 잦다는 게 확인됐다(사용자 리포트로 재확인). 그래서
- *   좌표(coord)가 있으면 텍스트 검색이 아니라 좌표를 그대로 찍는 구글 지도 링크
- *   (`/maps/search/?api=1&query=lat,lng`)를 쓴다 - 텍스트 매칭에 의존하지 않으므로 결과 없음이
- *   구조적으로 불가능하다. 좌표조차 없을 때만 "장소명 + 활동명" 문구로 네이버 지도 텍스트
- *   검색을 추측 시도한다("unconfirmed", 결과가 없을 수도 있는 최후 수단).
+ *   좌표(coord)가 있으면 텍스트 검색 대신 좌표를 직접 지정하는 네이버 지도 링크
+ *   (`map.naver.com/?lng=...&lat=...&title=...`, 네이버가 공식 문서화하진 않았지만 네이버
+ *   클라우드플랫폼 포럼에서 네이버 담당자가 동작을 확인해준 방식)를 쓴다 - 텍스트 매칭에
+ *   의존하지 않으므로 결과 없음이 구조적으로 불가능하다. 좌표조차 없을 때만 "장소명 + 활동명"
+ *   문구로 네이버 지도 텍스트 검색을 추측 시도한다("unconfirmed", 결과가 없을 수도 있는 최후 수단).
  *   클라이언트에서는 세 경우 모두 "지도에서 위치 보기"로 표시.
  * (네이버 키 자체가 없으면 검증을 시도하지 않고 모두 verified 취급해 기존 링크를 유지한다)
  */
@@ -36,7 +37,7 @@ async function enrichBookingLinks(activities) {
       }
       if (found.status === "place") {
         const bookingLink = found.coord
-          ? `https://www.google.com/maps/search/?api=1&query=${found.coord.lat},${found.coord.lng}`
+          ? `https://map.naver.com/?lng=${found.coord.lng}&lat=${found.coord.lat}&title=${encodeURIComponent(found.title)}`
           : `https://map.naver.com/p/search/${encodeURIComponent(`${found.title} ${found.address}`)}`;
         return { ...activity, bookingLink, bookingLinkVerified: false };
       }
