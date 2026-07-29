@@ -27,8 +27,9 @@ function buildSearchQuery(location, title) {
   return result.join(" ");
 }
 
-function naverSearchLink(activity) {
-  return `https://search.naver.com/search.naver?query=${encodeURIComponent(
+// "네이버 검색 결과"는 일반 웹 검색이 아니라 네이버 지도 검색 결과 페이지를 가리킨다.
+function naverMapSearchLink(activity) {
+  return `https://map.naver.com/p/search/${encodeURIComponent(
     buildSearchQuery(activity.location, activity.title)
   )}`;
 }
@@ -68,15 +69,15 @@ function compareByRule(a, b, budget) {
 /**
  * 각 활동에 CTA 규칙을 적용한다.
  * 1) 특정 업체의 홈페이지가 있는 경우 -> "예약하러 가기" + 그 홈페이지로 랜딩
- * 2) 홈페이지가 없거나, 있어도 실제 접속 시 오류가 나는 경우 -> "지도에서 찾기" + 네이버 검색
- *    결과 페이지로 랜딩 (검색어: "장소+활동명", 중복 단어 제거)
+ * 2) 홈페이지가 없거나, 있어도 실제 접속 시 오류가 나는 경우 -> "지도에서 찾기" + 네이버 지도
+ *    검색 결과 페이지로 랜딩 (검색어: "장소+활동명", 중복 단어 제거)
  */
 async function applyCtaRule(entry) {
   const { activity, found } = entry;
   if (found.status === "found" && (await isLinkAlive(found.link))) {
     return { ...activity, bookingLink: found.link, bookingLinkVerified: true };
   }
-  return { ...activity, bookingLink: naverSearchLink(activity), bookingLinkVerified: false };
+  return { ...activity, bookingLink: naverMapSearchLink(activity), bookingLinkVerified: false };
 }
 
 router.post("/recommend", async (req, res) => {
