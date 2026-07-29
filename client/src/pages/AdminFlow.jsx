@@ -10,7 +10,7 @@ const initialState = {
   date: "",
   weather: null,
   teamSize: 10,
-  budget: 30000,
+  budget: 60000,
   districts: [],
   keywords: [],
   placeType: "모두",

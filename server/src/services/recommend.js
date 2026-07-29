@@ -34,6 +34,14 @@ function scoreDistrict(activity, districts) {
   return districts.includes(activity.district) ? 1 : 0;
 }
 
+// 예산 이하이기만 하면 되는 게 아니라, 예산에 최대한 근접한 활동을 우선한다.
+// 완화 단계(2/3단계)에서는 예산을 넘는 활동도 후보에 들어올 수 있으므로 절대 거리 기준으로 계산한다.
+function scoreBudget(activity, budget) {
+  if (!budget) return 0;
+  const diffRatio = Math.abs(activity.pricePerPerson - budget) / budget;
+  return Math.max(0, 1 - diffRatio) * 2;
+}
+
 // title만으로는 서로 다른 위치의 동명 활동(예: "방탈출 카페"가 홍대/신촌에 각각 존재)을
 // 구분하지 못해 하나가 부당하게 제외되므로, title+location 조합을 고유 키로 쓴다.
 function activityKey(activity) {
@@ -84,6 +92,7 @@ export function recommendActivities({
       score:
         scoreKeywords(a, keywords) * 2 +
         scoreDistrict(a, districts) +
+        scoreBudget(a, budget) +
         (weatherBoost && a.type === weatherBoost ? 1 : 0) +
         Math.random() * 0.5, // 동점자 랜덤성 부여
     }));
