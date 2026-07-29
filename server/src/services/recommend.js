@@ -34,6 +34,12 @@ function scoreDistrict(activity, districts) {
   return districts.includes(activity.district) ? 1 : 0;
 }
 
+// title만으로는 서로 다른 위치의 동명 활동(예: "방탈출 카페"가 홍대/신촌에 각각 존재)을
+// 구분하지 못해 하나가 부당하게 제외되므로, title+location 조합을 고유 키로 쓴다.
+function activityKey(activity) {
+  return `${activity.title}|${activity.location}`;
+}
+
 const RECOMMEND_COUNT = 10;
 
 /**
@@ -66,12 +72,12 @@ export function recommendActivities({
   ];
 
   const picked = [];
-  const usedTitles = new Set();
+  const usedKeys = new Set();
 
   for (const stage of filterStages) {
     if (picked.length >= count) break;
 
-    const candidates = ACTIVITIES.filter((a) => !usedTitles.has(a.title) && stage(a));
+    const candidates = ACTIVITIES.filter((a) => !usedKeys.has(activityKey(a)) && stage(a));
 
     const scored = candidates.map((a) => ({
       activity: a,
@@ -87,7 +93,7 @@ export function recommendActivities({
     for (const { activity } of scored) {
       if (picked.length >= count) break;
       picked.push(activity);
-      usedTitles.add(activity.title);
+      usedKeys.add(activityKey(activity));
     }
   }
 

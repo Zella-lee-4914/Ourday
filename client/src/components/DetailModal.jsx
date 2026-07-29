@@ -113,7 +113,7 @@ export default function DetailModal({ activity, isCandidate, onClose, onToggleCa
           <button
             type="button"
             className="cta-btn secondary"
-            onClick={() => onToggleCandidate(activity)}
+            onClick={onToggleCandidate}
           >
             {isCandidate ? "후보에서 제거" : "투표 후보로 추가"}
           </button>

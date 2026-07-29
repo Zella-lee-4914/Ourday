@@ -4,7 +4,7 @@ import DetailModal from "./DetailModal.jsx";
 import { fetchRecommendations } from "../api/client.js";
 
 export default function Step3Recommend({ state, setState }) {
-  const [detailActivity, setDetailActivity] = useState(null);
+  const [detailIdx, setDetailIdx] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -39,8 +39,7 @@ export default function Step3Recommend({ state, setState }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const toggleCandidate = (activity) => {
-    const idx = state.activities.findIndex((a) => a.title === activity.title);
+  const toggleCandidate = (idx) => {
     setState((s) => ({
       ...s,
       candidates: s.candidates.includes(idx)
@@ -68,26 +67,23 @@ export default function Step3Recommend({ state, setState }) {
         <div className="activity-grid">
           {state.activities.map((activity, idx) => (
             <ActivityCard
-              key={activity.title + idx}
+              key={idx}
               activity={activity}
+              idx={idx}
               isCandidate={state.candidates.includes(idx)}
               onToggleCandidate={toggleCandidate}
-              onOpenDetail={setDetailActivity}
+              onOpenDetail={setDetailIdx}
             />
           ))}
         </div>
       )}
 
-      {detailActivity && (
+      {detailIdx !== null && (
         <DetailModal
-          activity={detailActivity}
-          isCandidate={state.candidates.includes(
-            state.activities.findIndex((a) => a.title === detailActivity.title)
-          )}
-          onToggleCandidate={(activity) => {
-            toggleCandidate(activity);
-          }}
-          onClose={() => setDetailActivity(null)}
+          activity={state.activities[detailIdx]}
+          isCandidate={state.candidates.includes(detailIdx)}
+          onToggleCandidate={() => toggleCandidate(detailIdx)}
+          onClose={() => setDetailIdx(null)}
         />
       )}
     </div>

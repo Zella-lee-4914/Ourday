@@ -1,4 +1,4 @@
-export default function ActivityCard({ activity, isCandidate, onToggleCandidate, onOpenDetail }) {
+export default function ActivityCard({ activity, idx, isCandidate, onToggleCandidate, onOpenDetail }) {
   return (
     <div className={`activity-card ${isCandidate ? "candidate" : ""}`}>
       <div className="activity-card-header">
@@ -19,14 +19,14 @@ export default function ActivityCard({ activity, isCandidate, onToggleCandidate,
         <span>📍 {activity.location}</span>
       </div>
       <div className="activity-card-footer">
-        <button type="button" className="detail-link" onClick={() => onOpenDetail(activity)}>
+        <button type="button" className="detail-link" onClick={() => onOpenDetail(idx)}>
           자세히 보기
         </button>
         <label className="candidate-checkbox">
           <input
             type="checkbox"
             checked={isCandidate}
-            onChange={() => onToggleCandidate(activity)}
+            onChange={() => onToggleCandidate(idx)}
           />
           투표 후보로 추가
         </label>
