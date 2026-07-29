@@ -14,9 +14,9 @@ function wait(ms) {
  * 각 활동에 대해 네이버 지역 검색으로 실제 업체 링크를 확인한다.
  * 추천 개수는 항상 그대로 유지하고, 각 활동에 bookingLinkVerified 플래그를 붙인다.
  * - true: 업체의 확인된 자체 링크를 찾아 bookingLink를 교체함 -> "예약하러 가기"로 표시
- * - false: 특정 업체는 확인 못 했지만, 활동이 위치한 지역명(예: "반포 한강공원", "구로")만으로
- *   네이버 지도를 검색하도록 bookingLink를 재구성한다. "업체명+활동명" 조합과 달리 지역명 자체는
- *   실제 존재하는 장소라 결과가 없을 가능성이 낮다. 클라이언트에서는 "지도에서 위치 보기"로 표시.
+ * - false: 특정 업체는 확인 못 했지만, "장소명 + 활동명"(예: "북촌 전통 다도 체험")으로 네이버
+ *   지도를 검색하도록 bookingLink를 재구성한다. 특정 업체 하나로 확정되진 않아도 주제와 관련된
+ *   결과를 보여줄 수 있다. 클라이언트에서는 "지도에서 위치 보기"로 표시.
  * (네이버 키 자체가 없으면 검증을 시도하지 않고 모두 verified 취급해 기존 링크를 유지한다)
  */
 async function enrichBookingLinks(activities) {
@@ -31,7 +31,7 @@ async function enrichBookingLinks(activities) {
       }
       return {
         ...activity,
-        bookingLink: `https://map.naver.com/p/search/${encodeURIComponent(activity.location)}`,
+        bookingLink: `https://map.naver.com/p/search/${encodeURIComponent(`${activity.location} ${activity.title}`)}`,
         bookingLinkVerified: false,
       };
     })

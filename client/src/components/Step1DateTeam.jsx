@@ -83,51 +83,55 @@ export default function Step1DateTeam({ state, setState, districts, weatherLoadi
           날짜 <span className="required-mark">*필수</span>
         </div>
         <div className="date-weather-card">
-          <div className="date-row">
-            <button type="button" className="icon-badge" onClick={handleOpenPicker} aria-label="날짜 선택">
-              📅
-            </button>
-            <input
-              ref={dateInputRef}
-              type="date"
-              className="date-input-inline"
-              min={todayStr()}
-              value={state.date}
-              onChange={handleDateChange}
-            />
+          <div className="date-half">
+            <div className="date-row">
+              <button type="button" className="icon-badge" onClick={handleOpenPicker} aria-label="날짜 선택">
+                📅
+              </button>
+              <input
+                ref={dateInputRef}
+                type="date"
+                className="date-input-inline"
+                min={todayStr()}
+                value={state.date}
+                onChange={handleDateChange}
+              />
+            </div>
           </div>
 
           <div className="weather-divider" />
 
-          <div className="weather-inline-row">
-            {weatherLoading && (
-              <>
-                <div className="pulse-dot" />
-                <span className="weather-placeholder">날씨 조회 중...</span>
-              </>
-            )}
-            {!weatherLoading && !state.date && (
-              <span className="weather-placeholder">날짜를 먼저 선택하면 날씨를 알려드려요</span>
-            )}
-            {!weatherLoading && state.date && weather?.ok && (
-              <>
-                <span className="icon-badge weather-badge">{weather.icon}</span>
-                <div>
-                  <div className="weather-desc">{weather.description}</div>
+          <div className="weather-half">
+            <div className="weather-inline-row">
+              {weatherLoading && (
+                <>
+                  <div className="pulse-dot" />
+                  <span className="weather-placeholder">날씨 조회 중...</span>
+                </>
+              )}
+              {!weatherLoading && !state.date && (
+                <span className="weather-placeholder">날짜를 먼저 선택하면 날씨를 알려드려요</span>
+              )}
+              {!weatherLoading && state.date && weather?.ok && (
+                <>
+                  <span className="icon-badge weather-badge">{weather.icon}</span>
                   <div>
-                    <span className="weather-temp-low">{weather.tempMin}°</span>
-                    {" / "}
-                    <span className="weather-temp-high">{weather.tempMax}°</span>
+                    <div className="weather-desc">{weather.description}</div>
+                    <div>
+                      <span className="weather-temp-low">{weather.tempMin}°</span>
+                      {" / "}
+                      <span className="weather-temp-high">{weather.tempMax}°</span>
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
-            {!weatherLoading && state.date && weather && !weather.ok && weather.reason === "out_of_range" && (
-              <span className="weather-placeholder">해당 날짜는 예보 범위를 벗어나 날씨를 표시할 수 없어요</span>
-            )}
-            {!weatherLoading && state.date && weather && !weather.ok && weather.reason !== "out_of_range" && (
-              <span className="weather-placeholder">날씨 정보를 불러오지 못했어요</span>
-            )}
+                </>
+              )}
+              {!weatherLoading && state.date && weather && !weather.ok && weather.reason === "out_of_range" && (
+                <span className="weather-placeholder">해당 날짜는 예보 범위를 벗어나 날씨를 표시할 수 없어요</span>
+              )}
+              {!weatherLoading && state.date && weather && !weather.ok && weather.reason !== "out_of_range" && (
+                <span className="weather-placeholder">날씨 정보를 불러오지 못했어요</span>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -209,7 +209,7 @@ textarea {
   background: var(--blue-light);
 }
 
-/* Date + weather unified card: 날짜(좌) / 날씨(우) 한 행 배치 */
+/* Date + weather unified card: 정중앙 divider 기준 좌(날짜)/우(날씨) 50:50 배치 */
 .date-weather-card {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -218,16 +218,27 @@ textarea {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 14px;
-  flex-wrap: wrap;
+}
+
+.date-half {
+  flex: 1 1 0;
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.weather-half {
+  flex: 1 1 0;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
 }
 
 .date-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-shrink: 0;
 }
 
 .date-input-inline {
@@ -259,6 +270,19 @@ textarea {
 }
 
 @media (max-width: 480px) {
+  .date-weather-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .date-half {
+    justify-content: flex-start;
+  }
+
+  .weather-half {
+    justify-content: flex-start;
+  }
+
   .weather-divider {
     display: none;
   }
