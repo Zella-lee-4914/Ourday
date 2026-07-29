@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
-    "audit:locations": "node scripts/auditLocations.js"
+    "audit:locations": "node scripts/auditLocations.js",
+    "audit:booking-links": "node scripts/auditBookingLinks.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

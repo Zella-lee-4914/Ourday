@@ -24,7 +24,7 @@ function wait(ms) {
 async function enrichBookingLinks(activities) {
   return Promise.all(
     activities.map(async (activity) => {
-      const found = await findBestBookingLink(`${activity.location} ${activity.title}`);
+      const found = await findBestBookingLink(`${activity.location} ${activity.title}`, activity.district);
       if (found.status === "found") {
         return { ...activity, bookingLink: found.link, bookingLinkVerified: true };
       }
