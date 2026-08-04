@@ -3,7 +3,7 @@ import ResultBars from "../components/ResultBars.jsx";
 import { usePolling } from "../utils/usePolling.js";
 import { fetchRoom, joinRoom as joinRoomApi, castVote } from "../api/client.js";
 
-export default function JoinFlow({ initialCode }) {
+export default function JoinFlow({ initialCode, onBack }) {
   const [code, setCode] = useState(initialCode || "");
   const [name, setName] = useState("");
   const [joining, setJoining] = useState(false);
@@ -64,6 +64,11 @@ export default function JoinFlow({ initialCode }) {
   if (!room) {
     return (
       <div className="center-page">
+        {onBack && (
+          <button type="button" className="back-link" onClick={onBack}>
+            ← 돌아가기
+          </button>
+        )}
         <div className="brand-title">아워데이</div>
         <p className="page-subtitle">투표에 참여하려면 이름을 입력해주세요.</p>
         <form onSubmit={handleJoin}>

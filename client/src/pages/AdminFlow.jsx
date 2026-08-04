@@ -34,7 +34,7 @@ async function copyToClipboard(text) {
   }
 }
 
-export default function AdminFlow() {
+export default function AdminFlow({ onRequestJoin }) {
   const [step, setStep] = useState(1);
   const [state, setState] = useState(initialState);
   const [meta, setMeta] = useState({ districts: [], keywords: [] });
@@ -116,6 +116,17 @@ export default function AdminFlow() {
             ← 이전
           </button>
         )}
+        {step === 1 && (
+          <button
+            type="button"
+            className="back-link"
+            style={{ float: "right" }}
+            onClick={onRequestJoin}
+          >
+            투표 코드가 있으신가요? 참여하기 →
+          </button>
+        )}
+
         {step === 1 && (
           <Step1DateTeam
             state={state}
