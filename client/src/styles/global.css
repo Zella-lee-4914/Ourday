@@ -524,6 +524,12 @@ input[type="range"].budget-slider {
   margin-bottom: 8px;
 }
 
+.join-code-link {
+  display: block;
+  width: 100%;
+  text-align: right;
+}
+
 /* Activity cards grid */
 .activity-grid {
   display: grid;

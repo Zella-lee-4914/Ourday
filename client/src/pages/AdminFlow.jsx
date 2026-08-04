@@ -117,12 +117,7 @@ export default function AdminFlow({ onRequestJoin }) {
           </button>
         )}
         {step === 1 && (
-          <button
-            type="button"
-            className="back-link"
-            style={{ float: "right" }}
-            onClick={onRequestJoin}
-          >
+          <button type="button" className="back-link join-code-link" onClick={onRequestJoin}>
             투표 코드가 있으신가요? 참여하기 →
           </button>
         )}
