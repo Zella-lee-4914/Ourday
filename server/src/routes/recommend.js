@@ -50,9 +50,13 @@ async function attachSearchInfo(activities) {
 
 /**
  * 규칙:
- * 정렬 순서 - 1) 선택한 예산에 가까운 항목, 2) 리뷰 순(rankIndex 근사치), 3) 강남구에서 가까운 지역 순
+ * 정렬 순서 - 0) 선택한 키워드와 일치하는 개수(많이 맞을수록 위), 1) 선택한 예산에 가까운 항목,
+ * 2) 리뷰 순(rankIndex 근사치), 3) 강남구에서 가까운 지역 순
  */
 function compareByRule(a, b, budget) {
+  const byKeyword = (b.activity.keywordMatchCount || 0) - (a.activity.keywordMatchCount || 0);
+  if (byKeyword !== 0) return byKeyword;
+
   const budgetDiff = (entry) => (budget ? Math.abs(entry.activity.pricePerPerson - budget) : 0);
   const byBudget = budgetDiff(a) - budgetDiff(b);
   if (byBudget !== 0) return byBudget;
@@ -74,10 +78,12 @@ function compareByRule(a, b, budget) {
  */
 async function applyCtaRule(entry) {
   const { activity, found } = entry;
+  // keywordMatchCount는 정렬 전용 내부 값이라 클라이언트 응답에는 포함하지 않는다.
+  const { keywordMatchCount, ...publicActivity } = activity;
   if (found.status === "found" && (await isLinkAlive(found.link))) {
-    return { ...activity, bookingLink: found.link, bookingLinkVerified: true };
+    return { ...publicActivity, bookingLink: found.link, bookingLinkVerified: true };
   }
-  return { ...activity, bookingLink: naverMapSearchLink(activity), bookingLinkVerified: false };
+  return { ...publicActivity, bookingLink: naverMapSearchLink(activity), bookingLinkVerified: false };
 }
 
 router.post("/recommend", async (req, res) => {
