@@ -34,7 +34,7 @@ async function copyToClipboard(text) {
   }
 }
 
-export default function AdminFlow({ onRequestJoin }) {
+export default function AdminFlow({ onRequestJoin, previewMode }) {
   const [step, setStep] = useState(1);
   const [state, setState] = useState(initialState);
   const [meta, setMeta] = useState({ districts: [], keywords: [] });
@@ -101,6 +101,7 @@ export default function AdminFlow({ onRequestJoin }) {
 
   const handleNext = () => {
     if (step === 3) {
+      if (previewMode) return;
       handleCreateRoomAndAdvance();
       return;
     }
@@ -138,6 +139,11 @@ export default function AdminFlow({ onRequestJoin }) {
           <>
             <Step3Recommend state={state} setState={setState} />
             {roomError && <div className="error-banner">{roomError}</div>}
+            {previewMode && (
+              <p className="helper-text" style={{ marginTop: 12 }}>
+                미리보기 링크라 투표방을 실제로 만들 수는 없어요.
+              </p>
+            )}
           </>
         )}
         {step === 4 && <Step4Vote room={room} copyStatus={copyStatus} setCopyStatus={setCopyStatus} setRoom={setRoom} />}
@@ -151,7 +157,7 @@ export default function AdminFlow({ onRequestJoin }) {
             disabled={
               (step === 1 && !canProceedStep1) ||
               (step === 2 && !canProceedStep2) ||
-              (step === 3 && (!canProceedStep3 || creatingRoom))
+              (step === 3 && (!canProceedStep3 || creatingRoom || previewMode))
             }
             onClick={handleNext}
           >
